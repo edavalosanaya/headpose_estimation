@@ -13,16 +13,18 @@ from .whenet import WHENet
 
 class Headpose():
 
-	def __init__(self,face_detection = True,draw = True) -> None:
+	def __init__(self,face_detection = True,draw = True, device = 'cpu') -> None:
 		
 		self.face_detection = face_detection
 		self.draw = draw
-		self.detector = RetinaFace()
+		if face_detection:
+			self.detector = RetinaFace()
+		else:
+			self.detection = None
+
 		dirname = os.path.dirname(__file__)
-		print(dirname)
 		model_path = Path(os.path.join(dirname, "WHENet.h5"))
 		self.headpose = WHENet(snapshot=model_path)
-
 
 
 	def draw_bbox(self,image,bboxes):
@@ -63,22 +65,33 @@ class Headpose():
 		yaw, pitch, roll = self.headpose.get_angle(img_rgb)
 		yaw, pitch, roll = np.squeeze([yaw, pitch, roll])
 
-
 		return yaw, pitch,roll
 
-	def detect_headpose(self,image,padded_bbox):
+	def detect_headpose(self,image,padded_bbox=None):
 
-		x_min, y_min, x_max,y_max = padded_bbox
+		if padded_bbox is not None:
+			x_min, y_min, x_max,y_max = padded_bbox
+			img_rgb = image[int(y_min):int(y_max), int(x_min):int(x_max)]
+		else:
+			img_rgb = image
 
-		img_rgb = image[int(y_min):int(y_max), int(x_min):int(x_max)]
 		img_rgb = cv2.cvtColor(img_rgb, cv2.COLOR_BGR2RGB)
 		img_rgb = cv2.resize(img_rgb, (224, 224))
 		img_rgb = np.expand_dims(img_rgb, axis=0)
 		yaw, pitch, roll = self.headpose.get_angle(img_rgb)
 		yaw, pitch, roll = np.squeeze([yaw, pitch, roll])
 
-
 		return yaw, pitch,roll
+	
+	def detect_multiple_headpose(self,images):
+
+		# Perform this in a batch form for faster inference
+		imgs_rgb = [cv2.cvtColor(image, cv2.COLOR_BGR2RGB) for image in images]
+		imgs_rgb = [cv2.resize(img_rgb, (224, 224)) for img_rgb in imgs_rgb]
+		imgs_rgb = np.array(imgs_rgb)
+		yaw, pitch, roll = self.headpose.get_angle(imgs_rgb)
+
+		return yaw, pitch, roll
 
 
 	def run(self,image):
@@ -115,10 +128,6 @@ class Headpose():
 				return final_output,image
 
 			return final_output
-
-
-
-
 
 
 
