@@ -10,6 +10,9 @@ from headpose_estimation.face_detector.retinaface import RetinaFace
 from .utils import draw_axis
 from .whenet import WHENet
 
+GIT_DIR = Path(__file__).parent.parent
+IMAGES_DIR = GIT_DIR / "images"
+
 
 class Headpose():
 
@@ -89,9 +92,13 @@ class Headpose():
 		imgs_rgb = [cv2.cvtColor(image, cv2.COLOR_BGR2RGB) for image in images]
 		imgs_rgb = [cv2.resize(img_rgb, (224, 224)) for img_rgb in imgs_rgb]
 		imgs_rgb = np.array(imgs_rgb)
-		yaw, pitch, roll = self.headpose.get_angle(imgs_rgb)
+		try:
+			yaw, pitch, roll = self.headpose.get_angle(imgs_rgb)
+		except Exception as e:
+			print(e)
+			return False, None, None, None
 
-		return yaw, pitch, roll
+		return True, yaw, pitch, roll
 
 
 	def run(self,image):
@@ -134,8 +141,8 @@ class Headpose():
 if __name__ == "__main__":
 
 	headpose = Headpose()
-	image_path = '/Users/ashish/Desktop/projects/HeadPoseEstimation-WHENet/Sample/random_internet_selfie.jpg'
-	img = cv2.imread(image_path)
+	# image_path = '/Users/ashish/Desktop/projects/HeadPoseEstimation-WHENet/Sample/random_internet_selfie.jpg'
+	img = cv2.imread(str(IMAGES_DIR / "example.jpg"))
 
 	output,image = headpose.run(img)
 	cv2.imshow("image",image)
