@@ -95,7 +95,6 @@ class Headpose():
 		try:
 			yaw, pitch, roll = self.headpose.get_angle(imgs_rgb)
 		except Exception as e:
-			print(e)
 			return False, None, None, None
 
 		return True, yaw, pitch, roll
